@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  
+  <!-- Connection Strings -->
+  <connectionStrings>
+    <add name="DefaultConnection" 
+         connectionString="Server=myServerAddress;Database=myDataBase;User Id=myUsername;Password=myPassword;" 
+         providerName="System.Data.SqlClient" />
+  </connectionStrings>
+
+  <!-- Application Settings -->
+  <appSettings>
+    <add key="SettingKey1" value="SettingValue1" />
+    <add key="SettingKey2" value="SettingValue2" />
+  </appSettings>
+
+  <!-- System Web Settings -->
+  <system.web>
+    
+    <!-- Authentication and Authorization -->
+    <authentication mode="Forms">
+      <forms loginUrl="~/Account/Login" timeout="2880" />
+    </authentication>
+    <authorization>
+      <deny users="?" />
+    </authorization>
+    
+    <!-- Custom Errors -->
+    <customErrors mode="On" defaultRedirect="~/Error/ErrorPage">
+      <error statusCode="404" redirect="~/Error/NotFound" />
+      <error statusCode="500" redirect="~/Error/InternalError" />
+    </customErrors>
+    
+    <!-- Compilation and Build Providers -->
+    <compilation debug="true" targetFramework="4.8">
+      <buildProviders>
+        <add extension=".rdlc" type="Microsoft.Reporting.RdlBuildProvider, Microsoft.ReportViewer.WebForms, Version=10.0.30319.1, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"/>
+      </buildProviders>
+    </compilation>
+    
+    <!-- Session State -->
+    <sessionState mode="InProc" timeout="20" />
+    
+    <!-- Globalization -->
+    <globalization culture="en-US" uiCulture="en" />
+
+  </system.web>
+
+  <!-- System Web Server Settings -->
+  <system.webServer>
+    
+    <!-- HTTP Handlers -->
+    <handlers>
+      <add name="MyHandler" path="*.myext" verb="*" type="MyNamespace.MyHandler, MyAssembly" resourceType="Unspecified" />
+    </handlers>
+    
+    <!-- HTTP Modules -->
+    <modules>
+      <add name="MyModule" type="MyNamespace.MyModule, MyAssembly" />
+    </modules>
+    
+    <!-- Custom Headers -->
+    <httpProtocol>
+      <customHeaders>
+        <add name="X-Content-Type-Options" value="nosniff" />
+        <add name="X-Frame-Options" value="DENY" />
+      </customHeaders>
+    </httpProtocol>
+    
+    <!-- URL Rewrite -->
+    <rewrite>
+      <rules>
+        <rule name="Rewrite to index">
+          <match url=".*" />
+          <action type="Rewrite" url="/index.html" />
+        </rule>
+      </rules>
+    </rewrite>
+
+  </system.webServer>
+
+  <!-- SMTP Settings -->
+  <system.net>
+    <mailSettings>
+      <smtp from="noreply@yourdomain.com">
+        <network host="smtp.yourdomain.com" port="25" userName="username" password="password" />
+      </smtp>
+    </mailSettings>
+  </system.net>
+
+  <!-- Assembly Binding Redirect -->
+  <runtime>
+    <assemblyBinding xmlns="urn:schemas-microsoft-com:asm.v1">
+      <dependentAssembly>
+        <assemblyIdentity name="Microsoft.ReportViewer.WebForms" publicKeyToken="b03f5f7f11d50a3a" culture="neutral"/>
+        <bindingRedirect oldVersion="10.0.0.0-10.0.30319.1" newVersion="10.0.30319.1"/>
+      </dependentAssembly>
+    </assemblyBinding>
+  </runtime>
+
+</configuration>
+
+<!--******** คำอธิบาย ******** -->
+<!--
+connectionStrings: กำหนดการเชื่อมต่อกับฐานข้อมูล
+appSettings: การตั้งค่าทั่วไปสำหรับแอปพลิเคชัน
+system.web: การตั้งค่าต่าง ๆ ภายในระบบเว็บของ ASP.NET
+compilation: การตั้งค่าการคอมไพล์และ buildProviders สำหรับไฟล์ .rdlc
+sessionState: การตั้งค่าเซสชัน
+globalization: การตั้งค่าภาษาและการจัดรูปแบบข้อมูล
+system.webServer: การตั้งค่าที่เกี่ยวข้องกับเว็บเซิร์ฟเวอร์
+rewrite: การตั้งค่า URL Rewrite
+mailSettings: การตั้งค่าสำหรับการส่งอีเมลผ่าน SMTP
+runtime: การตั้งค่า Assembly Binding Redirect
+-->
