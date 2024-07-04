@@ -1,0 +1,32 @@
+using System;
+using IBM.Data.Informix;
+
+class Program
+{
+    static void Main()
+    {
+        string connectionString = "Host=myhost;Service=myport;Server=myserver;Database=mydb;User Id=myuser;Password=mypassword;";
+        using (IfxConnection connection = new IfxConnection(connectionString))
+        {
+            connection.Open();
+
+            // ExecuteNonQuery ใช้กับคำสั่งที่ไม่ต้องการผลลัพธ์ (เช่น INSERT, UPDATE, DELETE)
+            IfxCommand command = new IfxCommand("INSERT INTO students (id, name, age) VALUES (1, 'John Doe', 25)", connection);
+            int rowsAffected = command.ExecuteNonQuery();
+            Console.WriteLine("Rows affected: " + rowsAffected);
+
+            // ExecuteScalar ใช้กับคำสั่งที่ส่งคืนค่าผลลัพธ์เดียว (เช่น SELECT COUNT(*))
+            command = new IfxCommand("SELECT COUNT(*) FROM students", connection);
+            int studentCount = (int)command.ExecuteScalar();
+            Console.WriteLine("Number of students: " + studentCount);
+
+            // ExecuteReader ใช้กับคำสั่ง SELECT ที่ส่งคืนชุดผลลัพธ์
+            command = new IfxCommand("SELECT * FROM students", connection);
+            IfxDataReader reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                Console.WriteLine($"ID: {reader["id"]}, Name: {reader["name"]}, Age: {reader["age"]}");
+            }
+        }
+    }
+}
