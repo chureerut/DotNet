@@ -1,0 +1,58 @@
+public class Student
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public int Age { get; set; }
+}
+
+
+
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.SqlClient;
+
+class Program
+{
+    static void Main()
+    {
+        string connectionString = "your_connection_string_here";
+
+        using (SqlConnection connection = new SqlConnection(connectionString))
+        {
+            connection.Open();
+
+            string selectSql = "SELECT Id, Name, Age FROM Students";
+            List<Student> students = GetStudents(connection, selectSql);
+
+            foreach (var student in students)
+            {
+                Console.WriteLine($"ID: {student.Id}, Name: {student.Name}, Age: {student.Age}");
+            }
+        }
+    }
+
+    static List<Student> GetStudents(SqlConnection connection, string sql)
+    {
+        List<Student> students = new List<Student>();
+        
+        using (SqlCommand command = new SqlCommand(sql, connection))
+        {
+            using (SqlDataReader reader = command.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    Student student = new Student
+                    {
+                        Id = Convert.ToInt32(reader["Id"]),
+                        Name = reader["Name"].ToString(),
+                        Age = Convert.ToInt32(reader["Age"])
+                    };
+                    students.Add(student);
+                }
+            }
+        }
+
+        return students;
+    }
+}
