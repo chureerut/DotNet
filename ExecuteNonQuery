@@ -1,0 +1,117 @@
+//ExecuteNonQuery ใช้กับคำสั่งที่ไม่ต้องการผลลัพธ์ (เช่น INSERT, UPDATE, DELETE)
+//
+
+using System;
+using System.Data.SqlClient;
+
+class Program
+{
+    static void Main()
+    {
+        string connectionString = "your_connection_string_here";
+        bool result = ExecuteDatabaseOperations(connectionString);
+        if (result)
+        {
+            Console.WriteLine("All operations completed successfully.");
+        }
+        else
+        {
+            Console.WriteLine("Operations failed.");
+        }
+    }
+
+    static bool ExecuteDatabaseOperations(string connectionString)
+    {
+        using (SqlConnection connection = new SqlConnection(connectionString))
+        {
+            connection.Open();
+            SqlTransaction transaction = connection.BeginTransaction();
+
+            try
+            {
+                // 1. CREATE TABLE
+                string createTableSql = @"
+                    CREATE TABLE Students (
+                        Id INT PRIMARY KEY IDENTITY(1,1),
+                        Name NVARCHAR(50),
+                        Age INT
+                    )";
+                ExecuteNonQuery(connection, createTableSql, transaction);
+
+                // 2. INSERT
+                string insertSql = "INSERT INTO Students (Name, Age) VALUES (@Name, @Age)";
+                SqlCommand insertCommand = new SqlCommand(insertSql, connection, transaction);
+                insertCommand.Parameters.AddWithValue("@Name", "John Doe");
+                insertCommand.Parameters.AddWithValue("@Age", 25);
+                ExecuteNonQuery(insertCommand);
+
+                // 3. UPDATE
+                string updateSql = "UPDATE Students SET Age = @Age WHERE Name = @Name";
+                SqlCommand updateCommand = new SqlCommand(updateSql, connection, transaction);
+                updateCommand.Parameters.AddWithValue("@Name", "John Doe");
+                updateCommand.Parameters.AddWithValue("@Age", 26);
+                ExecuteNonQuery(updateCommand);
+
+                // 4. DELETE
+                string deleteSql = "DELETE FROM Students WHERE Name = @Name";
+                SqlCommand deleteCommand = new SqlCommand(deleteSql, connection, transaction);
+                deleteCommand.Parameters.AddWithValue("@Name", "John Doe");
+                ExecuteNonQuery(deleteCommand);
+
+                // Commit the transaction
+                transaction.Commit();
+                Console.WriteLine("Transaction committed successfully.");
+                return true; // Return success
+            }
+            catch (SqlException ex)
+            {
+                Console.WriteLine($"SQL Error: {ex.Message}");
+                try
+                {
+                    // Rollback the transaction
+                    transaction.Rollback();
+                    Console.WriteLine("Transaction rolled back.");
+                }
+                catch (Exception rollbackEx)
+                {
+                    Console.WriteLine($"Rollback Error: {rollbackEx.Message}");
+                }
+                return false; // Return failure
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+                try
+                {
+                    // Rollback the transaction
+                    transaction.Rollback();
+                    Console.WriteLine("Transaction rolled back.");
+                }
+                catch (Exception rollbackEx)
+                {
+                    Console.WriteLine($"Rollback Error: {rollbackEx.Message}");
+                }
+                return false; // Return failure
+            }
+        }
+    }
+
+    static void ExecuteNonQuery(SqlConnection connection, string sql, SqlTransaction transaction)
+    {
+        using (SqlCommand command = new SqlCommand(sql, connection, transaction))
+        {
+            command.ExecuteNonQuery();
+        }
+    }
+
+    static void ExecuteNonQuery(SqlCommand command)
+    {
+        command.ExecuteNonQuery();
+    }
+}
+
+
+//ในโค้ดนี้:
+//ฟังก์ชัน ExecuteDatabaseOperations จะคืนค่า true หากการดำเนินการสำเร็จและธุรกรรมถูก commit
+//หากมีข้อผิดพลาดใดๆ เกิดขึ้น ฟังก์ชันจะคืนค่า false และทำการ rollback ธุรกรรม
+//ใน Main เราทำการเรียก ExecuteDatabaseOperations และตรวจสอบผลลัพธ์เพื่อพิมพ์ข้อความบอกว่าสำเร็จหรือไม่สำเร็จ
