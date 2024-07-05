@@ -1,4 +1,4 @@
-//ExecuteNonQuery ใช้กับคำสั่งที่ไม่ต้องการผลลัพธ์ (เช่น INSERT, UPDATE, DELETE)
+//SQL ExecuteNonQuery ใช้กับคำสั่งที่ไม่ต้องการผลลัพธ์ (เช่น INSERT, UPDATE, DELETE)
 //
 
 using System;
