@@ -2,116 +2,104 @@
 //
 
 using System;
+using System.Collections.Generic;
+using System.Configuration;
+using System.Data;
 using System.Data.SqlClient;
+using System.Linq;
+using System.Reflection;
+using System.Text;
+using System.Threading.Tasks;
 
-class Program
-{
-    static void Main()
+namespace ConsoleAppDataAccess.dataaccess
+{    
+    public class mssql
     {
-        string connectionString = "your_connection_string_here";
-        bool result = ExecuteDatabaseOperations(connectionString);
-        if (result)
-        {
-            Console.WriteLine("All operations completed successfully.");
-        }
-        else
-        {
-            Console.WriteLine("Operations failed.");
-        }
-    }
+        private static readonly log4net.ILog log = log4net.LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+        private static string connSql = ConfigurationManager.AppSettings.Get("connSql");
 
-    static bool ExecuteDatabaseOperations(string connectionString)
-    {
-        using (SqlConnection connection = new SqlConnection(connectionString))
+        public static bool ExecuteNonQuerySQL(string query)
         {
-            connection.Open();
-            SqlTransaction transaction = connection.BeginTransaction();
-
             try
             {
-                // 1. CREATE TABLE
-                string createTableSql = @"
-                    CREATE TABLE Students (
-                        Id INT PRIMARY KEY IDENTITY(1,1),
-                        Name NVARCHAR(50),
-                        Age INT
-                    )";
-                ExecuteNonQuery(connection, createTableSql, transaction);
-
-                // 2. INSERT
-                string insertSql = "INSERT INTO Students (Name, Age) VALUES (@Name, @Age)";
-                SqlCommand insertCommand = new SqlCommand(insertSql, connection, transaction);
-                insertCommand.Parameters.AddWithValue("@Name", "John Doe");
-                insertCommand.Parameters.AddWithValue("@Age", 25);
-                ExecuteNonQuery(insertCommand);
-
-                // 3. UPDATE
-                string updateSql = "UPDATE Students SET Age = @Age WHERE Name = @Name";
-                SqlCommand updateCommand = new SqlCommand(updateSql, connection, transaction);
-                updateCommand.Parameters.AddWithValue("@Name", "John Doe");
-                updateCommand.Parameters.AddWithValue("@Age", 26);
-                ExecuteNonQuery(updateCommand);
-
-                // 4. DELETE
-                string deleteSql = "DELETE FROM Students WHERE Name = @Name";
-                SqlCommand deleteCommand = new SqlCommand(deleteSql, connection, transaction);
-                deleteCommand.Parameters.AddWithValue("@Name", "John Doe");
-                ExecuteNonQuery(deleteCommand);
-
-                // Commit the transaction
-                transaction.Commit();
-                Console.WriteLine("Transaction committed successfully.");
-                return true; // Return success
-            }
-            catch (SqlException ex)
-            {
-                Console.WriteLine($"SQL Error: {ex.Message}");
-                try
+                using (SqlConnection connection = new SqlConnection(connSql))
                 {
-                    // Rollback the transaction
-                    transaction.Rollback();
-                    Console.WriteLine("Transaction rolled back.");
+                    connection.Open();
+                    using (SqlTransaction transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted))
+                    {
+                        try
+                        {
+                            using (SqlCommand command = new SqlCommand(query, connection, transaction))
+                            {
+                                command.CommandTimeout = 5000;
+                                command.ExecuteNonQuery();
+                            }
+
+                            // Commit the transaction
+                            transaction.Commit();
+                            log.Info("Transaction committed successfully.");
+                            log.Info("Success");
+                            return true; // Return success
+                        }
+                        catch (SqlException ex)
+                        {
+                            log.Error($"SQL Error: {ex.Message}");
+
+                            // Attempt to rollback the transaction
+                            try
+                            {
+                                transaction.Rollback();
+                                log.Info("Transaction rolled back.");
+                            }
+                            catch (Exception rollbackEx)
+                            {
+                                log.Error($"Rollback Error: {rollbackEx.Message}");
+                            }
+
+                            return false; // Return failure
+                        }
+                        catch (Exception ex)
+                        {
+                            log.Error($"Error: {ex.Message}");
+
+                            // Attempt to rollback the transaction
+                            try
+                            {
+                                transaction.Rollback();
+                                log.Info("Transaction rolled back.");
+                            }
+                            catch (Exception rollbackEx)
+                            {
+                                log.Error($"Rollback Error: {rollbackEx.Message}");
+                            }
+
+                            return false; // Return failure
+                        }
+                    }
                 }
-                catch (Exception rollbackEx)
-                {
-                    Console.WriteLine($"Rollback Error: {rollbackEx.Message}");
-                }
-                return false; // Return failure
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error: {ex.Message}");
-                try
-                {
-                    // Rollback the transaction
-                    transaction.Rollback();
-                    Console.WriteLine("Transaction rolled back.");
-                }
-                catch (Exception rollbackEx)
-                {
-                    Console.WriteLine($"Rollback Error: {rollbackEx.Message}");
-                }
+                log.Error($"Error: {ex.Message}");
                 return false; // Return failure
             }
-        }
-    }
 
-    static void ExecuteNonQuery(SqlConnection connection, string sql, SqlTransaction transaction)
-    {
-        using (SqlCommand command = new SqlCommand(sql, connection, transaction))
-        {
-            command.ExecuteNonQuery();
         }
-    }
-
-    static void ExecuteNonQuery(SqlCommand command)
-    {
-        command.ExecuteNonQuery();
     }
 }
+
 
 
 //ในโค้ดนี้:
 //ฟังก์ชัน ExecuteDatabaseOperations จะคืนค่า true หากการดำเนินการสำเร็จและธุรกรรมถูก commit
 //หากมีข้อผิดพลาดใดๆ เกิดขึ้น ฟังก์ชันจะคืนค่า false และทำการ rollback ธุรกรรม
 //ใน Main เราทำการเรียก ExecuteDatabaseOperations และตรวจสอบผลลัพธ์เพื่อพิมพ์ข้อความบอกว่าสำเร็จหรือไม่สำเร็จ
+
+
+ReadUncommitted: ใช้ในการอนุญาตให้การอ่านข้อมูลที่ยังไม่ได้ Commit แต่อาจทำให้เกิดปัญหาการอ่านข้อมูลที่ไม่ถูกต้อง (dirty reads).
+
+ReadCommitted: ใช้ในการอนุญาตให้การอ่านข้อมูลเฉพาะที่มีการ Commit เท่านั้น ซึ่งลดความเสี่ยงในการเกิด dirty reads แต่ยังสามารถเกิดปัญหาการอ่านข้อมูลที่ไม่เหมือนกัน (non-repeatable reads).
+
+RepeatableRead: ใช้ในการอนุญาตให้การอ่านข้อมูลใน Transaction เดียวกันเป็นครั้งเดียว ซึ่งลดความเสี่ยงในการเกิด dirty reads และ non-repeatable reads แต่ยังสามารถเกิดปัญหา phantom reads (การอ่านข้อมูลที่เพิ่มเข้ามาใน Transaction อื่น) ได้.
+
+Serializable: ใช้ในการอนุญาตให้การอ่านข้อมูลที่ไม่เปลี่ยนแปลงในระหว่างการทำ Transaction ทำให้ลดความเสี่ยงในการเกิด dirty reads, non-repeatable reads, และ phantom reads ทั้งหมด.
