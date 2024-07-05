@@ -1,0 +1,129 @@
+// ExecuteReader ใช้กับคำสั่ง SELECT ที่ส่งคืนชุดผลลัพธ์
+using System;
+using System.Collections.Generic;
+using System.Data.SqlClient;
+using System.Linq;
+
+class Program
+{
+    static void Main()
+    {
+        string connectionString = "your_connection_string_here";
+
+        using (SqlConnection connection = new SqlConnection(connectionString))
+        {
+            connection.Open();
+
+            // 1. Return all data as List of Dictionaries
+            string selectAllSql = "SELECT * FROM Students";
+            var studentsDictList = ExecuteReaderAsListOfDictionaries(connection, selectAllSql);
+            foreach (var student in studentsDictList)
+            {
+                Console.WriteLine($"ID: {student["Id"]}, Name: {student["Name"]}, Age: {student["Age"]}");
+            }
+
+            // 2. Return specific columns as List of Tuples
+            string selectColumnsSql = "SELECT Name, Age FROM Students";
+            var studentsTupleList = ExecuteReaderAsListOfTuples(connection, selectColumnsSql);
+            foreach (var (Name, Age) in studentsTupleList)
+            {
+                Console.WriteLine($"Name: {Name}, Age: {Age}");
+            }
+
+            // 3. Return data as List of Model Class
+            string selectModelSql = "SELECT Id, Name, Age FROM Students";
+            var studentsModelList = ExecuteReaderAsListOfModels(connection, selectModelSql);
+            foreach (var student in studentsModelList)
+            {
+                Console.WriteLine($"ID: {student.Id}, Name: {student.Name}, Age: {student.Age}");
+            }
+
+            // 4. Return data using LINQ
+            var studentsLinq = ExecuteReaderAsListOfModels(connection, selectModelSql)
+                .Where(s => s.Age > 20)
+                .ToList();
+            foreach (var student in studentsLinq)
+            {
+                Console.WriteLine($"ID: {student.Id}, Name: {student.Name}, Age: {student.Age}");
+            }
+        }
+    }
+
+    // Method to return data as List of Dictionaries
+    static List<Dictionary<string, object>> ExecuteReaderAsListOfDictionaries(SqlConnection connection, string sql)
+    {
+        var result = new List<Dictionary<string, object>>();
+        using (SqlCommand command = new SqlCommand(sql, connection))
+        {
+            using (SqlDataReader reader = command.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    var row = new Dictionary<string, object>();
+                    for (int i = 0; i < reader.FieldCount; i++)
+                    {
+                        row[reader.GetName(i)] = reader.GetValue(i);
+                    }
+                    result.Add(row);
+                }
+            }
+        }
+        return result;
+    }
+
+    // Method to return specific columns as List of Tuples
+    static List<(string Name, int Age)> ExecuteReaderAsListOfTuples(SqlConnection connection, string sql)
+    {
+        var result = new List<(string Name, int Age)>();
+        using (SqlCommand command = new SqlCommand(sql, connection))
+        {
+            using (SqlDataReader reader = command.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    result.Add((reader["Name"].ToString(), Convert.ToInt32(reader["Age"])));
+                }
+            }
+        }
+        return result;
+    }
+
+    // Model class for Students
+    public class Student
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public int Age { get; set; }
+    }
+
+    // Method to return data as List of Model Class
+    static List<Student> ExecuteReaderAsListOfModels(SqlConnection connection, string sql)
+    {
+        var result = new List<Student>();
+        using (SqlCommand command = new SqlCommand(sql, connection))
+        {
+            using (SqlDataReader reader = command.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    result.Add(new Student
+                    {
+                        Id = Convert.ToInt32(reader["Id"]),
+                        Name = reader["Name"].ToString(),
+                        Age = Convert.ToInt32(reader["Age"])
+                    });
+                }
+            }
+        }
+        return result;
+    }
+}
+
+
+ในโค้ดนี้:
+
+ฟังก์ชัน ExecuteReaderAsListOfDictionaries จะคืนค่าผลลัพธ์เป็น List ของ Dictionary ซึ่งแต่ละ Dictionary จะเก็บข้อมูลในแถวหนึ่งๆ
+ฟังก์ชัน ExecuteReaderAsListOfTuples จะคืนค่าผลลัพธ์เป็น List ของ Tuple ที่เก็บข้อมูลเฉพาะบางคอลัมน์
+ฟังก์ชัน ExecuteReaderAsListOfModels จะคืนค่าผลลัพธ์เป็น List ของ Model Class ที่สร้างขึ้นเพื่อเก็บข้อมูลของแต่ละแถว
+การใช้ LINQ เพื่อกรองข้อมูลหลังจากดึงข้อมูลออกมาแล้ว
+การใช้งานแบบนี้ทำให้เราสามารถคืนค่าผลลัพธ์ในรูปแบบที่ยืดหยุ่นและสามารถนำไปใช้ในโค้ดของเราได้ง่ายขึ้น
