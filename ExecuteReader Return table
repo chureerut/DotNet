@@ -1,0 +1,80 @@
+using System;
+using System.Data;
+using System.Data.SqlClient;
+
+class Program
+{
+    static void Main()
+    {
+        string connectionString = "your_connection_string_here";
+
+        using (SqlConnection connection = new SqlConnection(connectionString))
+        {
+            connection.Open();
+
+            // 1. ดึงข้อมูลทั้งหมดจากตารางและคืนค่าในรูปแบบ DataTable
+            string selectAllSql = "SELECT * FROM Students";
+            DataTable studentsDataTable = ExecuteReaderAsDataTable(connection, selectAllSql);
+            PrintDataTable(studentsDataTable);
+
+            // 2. ดึงข้อมูลเฉพาะบางคอลัมน์และคืนค่าในรูปแบบ DataTable
+            string selectColumnsSql = "SELECT Name, Age FROM Students";
+            DataTable columnsDataTable = ExecuteReaderAsDataTable(connection, selectColumnsSql);
+            PrintDataTable(columnsDataTable);
+
+            // 3. ดึงข้อมูลโดยมีเงื่อนไขและคืนค่าในรูปแบบ DataTable
+            string selectWhereSql = "SELECT * FROM Students WHERE Age > @Age";
+            using (SqlCommand command = new SqlCommand(selectWhereSql, connection))
+            {
+                command.Parameters.AddWithValue("@Age", 20);
+                DataTable whereDataTable = ExecuteReaderAsDataTable(command);
+                PrintDataTable(whereDataTable);
+            }
+
+            // 4. ดึงข้อมูลโดยใช้ JOIN และคืนค่าในรูปแบบ DataTable
+            string joinSql = @"
+                SELECT s.Id, s.Name, c.CourseName
+                FROM Students s
+                JOIN Enrollments e ON s.Id = e.StudentId
+                JOIN Courses c ON e.CourseId = c.Id";
+            DataTable joinDataTable = ExecuteReaderAsDataTable(connection, joinSql);
+            PrintDataTable(joinDataTable);
+        }
+    }
+
+    static DataTable ExecuteReaderAsDataTable(SqlConnection connection, string sql)
+    {
+        using (SqlCommand command = new SqlCommand(sql, connection))
+        {
+            return ExecuteReaderAsDataTable(command);
+        }
+    }
+
+    static DataTable ExecuteReaderAsDataTable(SqlCommand command)
+    {
+        using (SqlDataReader reader = command.ExecuteReader())
+        {
+            DataTable dataTable = new DataTable();
+            dataTable.Load(reader);
+            return dataTable;
+        }
+    }
+
+    static void PrintDataTable(DataTable dataTable)
+    {
+        foreach (DataRow row in dataTable.Rows)
+        {
+            foreach (DataColumn column in dataTable.Columns)
+            {
+                Console.Write($"{column.ColumnName}: {row[column]} ");
+            }
+            Console.WriteLine();
+        }
+    }
+}
+ในโค้ดนี้:
+
+ฟังก์ชัน ExecuteReaderAsDataTable ที่ใช้ SqlConnection และ SQL string เป็นอินพุต และคืนค่า DataTable
+ฟังก์ชัน ExecuteReaderAsDataTable ที่ใช้ SqlCommand เป็นอินพุต และคืนค่า DataTable
+ฟังก์ชัน PrintDataTable ที่พิมพ์ข้อมูลใน DataTable ออกมาในรูปแบบที่อ่านง่าย
+ฟังก์ชัน ExecuteReaderAsDataTable จะใช้ SqlDataReader เพื่ออ่านข้อมูลจากฐานข้อมูล และใช้ DataTable.Load เพื่อโหลดข้อมูลเข้าไปใน DataTable การใช้ DataTable ช่วยให้เราสามารถจัดการข้อมูลในรูปแบบตารางที่มีโครงสร้างและทำงานกับข้อมูลในหน่วยความจำได้ง่ายขึ้น
