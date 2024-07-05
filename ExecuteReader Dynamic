@@ -1,0 +1,54 @@
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.SqlClient;
+using System.Dynamic;
+
+class Program
+{
+    static void Main()
+    {
+        string connectionString = "your_connection_string_here";
+
+        using (SqlConnection connection = new SqlConnection(connectionString))
+        {
+            connection.Open();
+
+            string selectSql = "SELECT Id, Name, Age FROM Students";
+            List<dynamic> students = GetStudentsDynamic(connection, selectSql);
+
+            foreach (var student in students)
+            {
+                Console.WriteLine($"ID: {student.Id}, Name: {student.Name}, Age: {student.Age}");
+            }
+        }
+    }
+
+    static List<dynamic> GetStudentsDynamic(SqlConnection connection, string sql)
+    {
+        List<dynamic> students = new List<dynamic>();
+
+        using (SqlCommand command = new SqlCommand(sql, connection))
+        {
+            using (SqlDataReader reader = command.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    dynamic student = new ExpandoObject();
+                    var studentDict = (IDictionary<string, object>)student;
+
+                    for (int i = 0; i < reader.FieldCount; i++)
+                    {
+                        string fieldName = reader.GetName(i);
+                        object fieldValue = reader.GetValue(i);
+                        studentDict[fieldName] = fieldValue;
+                    }
+
+                    students.Add(student);
+                }
+            }
+        }
+
+        return students;
+    }
+}
