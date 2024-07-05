@@ -1,0 +1,64 @@
+//ExecuteScalar ใช้กับคำสั่งที่ส่งคืนค่าผลลัพธ์เดียว (เช่น SELECT COUNT(*))
+
+using System;
+using System.Data.SqlClient;
+
+class Program
+{
+    static void Main()
+    {
+        string connectionString = "your_connection_string_here";
+
+        using (SqlConnection connection = new SqlConnection(connectionString))
+        {
+            connection.Open();
+
+            // ตัวอย่างการใช้ ExecuteScalar ในหลายรูปแบบ
+
+            // 1. นับจำนวนแถวในตาราง (COUNT)
+            string countSql = "SELECT COUNT(*) FROM Students";
+            int studentCount = ExecuteScalar<int>(connection, countSql);
+            Console.WriteLine($"Number of students: {studentCount}");
+
+            // 2. หาค่าเฉลี่ยของอายุ (AVG)
+            string avgAgeSql = "SELECT AVG(Age) FROM Students";
+            double avgAge = ExecuteScalar<double>(connection, avgAgeSql);
+            Console.WriteLine($"Average age of students: {avgAge}");
+
+            // 3. หาค่ามากที่สุดของอายุ (MAX)
+            string maxAgeSql = "SELECT MAX(Age) FROM Students";
+            int maxAge = ExecuteScalar<int>(connection, maxAgeSql);
+            Console.WriteLine($"Maximum age of students: {maxAge}");
+
+            // 4. หาค่าน้อยที่สุดของอายุ (MIN)
+            string minAgeSql = "SELECT MIN(Age) FROM Students";
+            int minAge = ExecuteScalar<int>(connection, minAgeSql);
+            Console.WriteLine($"Minimum age of students: {minAge}");
+
+            // 5. ดึงค่าเฉพาะ (SELECT)
+            string singleValueSql = "SELECT Name FROM Students WHERE Id = 1";
+            string studentName = ExecuteScalar<string>(connection, singleValueSql);
+            Console.WriteLine($"Name of student with ID 1: {studentName}");
+        }
+    }
+
+    static T ExecuteScalar<T>(SqlConnection connection, string sql)
+    {
+        using (SqlCommand command = new SqlCommand(sql, connection))
+        {
+            object result = command.ExecuteScalar();
+            return (result != null && result != DBNull.Value) ? (T)Convert.ChangeType(result, typeof(T)) : default(T);
+        }
+    }
+}
+
+//ในโค้ดนี้:
+
+//ฟังก์ชัน ExecuteScalar<T> ถูกสร้างขึ้นเพื่อรองรับการคืนค่าผลลัพธ์ประเภทต่าง ๆ โดยใช้การทำงานของ Convert.ChangeType เพื่อแปลงผลลัพธ์เป็นประเภทที่ต้องการ
+//ตัวอย่างการใช้ ExecuteScalar ในหลายรูปแบบ:
+//การนับจำนวนแถวในตารางด้วยคำสั่ง SELECT COUNT(*)
+//การหาค่าเฉลี่ยของอายุด้วยคำสั่ง SELECT AVG(Age)
+//การหาค่ามากที่สุดของอายุด้วยคำสั่ง SELECT MAX(Age)
+//การหาค่าน้อยที่สุดของอายุด้วยคำสั่ง SELECT MIN(Age)
+//การดึงค่าชื่อของนักเรียนที่มี ID เท่ากับ 1 ด้วยคำสั่ง SELECT Name
+//ฟังก์ชัน ExecuteScalar<T> จะทำหน้าที่คืนค่าผลลัพธ์ตามประเภทที่ระบุ ถ้าผลลัพธ์เป็น null หรือ DBNull จะคืนค่าเริ่มต้นของประเภทนั้น (default(T))
